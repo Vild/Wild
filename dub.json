@@ -1,0 +1,8 @@
+{
+	"name": "wild",
+	"description": "A minimal D application.",
+	"copyright": "Copyright © 2015, wildn00b",
+	"authors": ["wildn00b"],
+	"dependencies": {
+	}
+}
