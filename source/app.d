@@ -70,6 +70,9 @@ int main(string[] args_) {
 int buildState() {
 	writeln("Building project...");
 
+	import wild.io.wildparser : RunTest;
+	RunTest();
+
 	if (clean)
 		writeln("Cleaning build files...");
 	return 0;

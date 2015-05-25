@@ -7,3 +7,7 @@ dub.selections.json
 dub.userprefs
 wild
 -*/wild
+.buildpath
+.project
+.settings
+app.gcno

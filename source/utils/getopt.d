@@ -5,7 +5,7 @@
  This is because both ldc and gdc have 2.066.1.
 
  Every function, class, struct and enum will start with the letter 'w'.
- This is because when both ldc and gdc updates to 2.067, it will be as really easy to change to std.getopt.
+ This is because when both ldc and gdc updates to 2.067, it will be as really easy to change to utils.getopt.
  */
 
 
@@ -61,7 +61,7 @@ import std.traits;
 /**
  * Thrown on one of the following conditions:
  * - An unrecognized command-line argument is passed
- *   and $(D std.getopt.config.passThrough) was not present.
+ *   and $(D utils.getopt.config.passThrough) was not present.
  */
 class GetOptException : Exception
 {
@@ -78,7 +78,7 @@ class GetOptException : Exception
  Synopsis:
 
  ---------
- import std.getopt;
+ import utils.getopt;
 
  string data = "file.dat";
  int length = 24;
@@ -120,7 +120,7 @@ class GetOptException : Exception
  command-line argument is recognized as an option with a parameter and
  the parameter cannot be parsed properly (e.g. a number is expected
  but not present), a $(D ConvException) exception is thrown.
- If $(D std.getopt.config.passThrough) was not passed to getopt
+ If $(D utils.getopt.config.passThrough) was not passed to getopt
  and an unrecognized command-line argument is found, a $(D GetOptException)
  is thrown.
 
@@ -338,7 +338,7 @@ class GetOptException : Exception
  ---------
  bool foo, bar;
  getopt(args,
- std.getopt.config.caseSensitive,
+ utils.getopt.config.caseSensitive,
  "foo", &foo,
  "bar", &bar);
  ---------
@@ -350,16 +350,16 @@ class GetOptException : Exception
  ---------
  bool foo, bar;
  getopt(args,
- std.getopt.config.caseSensitive,
+ utils.getopt.config.caseSensitive,
  "foo", &foo,
- std.getopt.config.caseInsensitive,
+ utils.getopt.config.caseInsensitive,
  "bar", &bar);
  ---------
 
  The option "--Foo" is rejected due to $(D
- std.getopt.config.caseSensitive), but not "--Bar", "--bAr"
+ utils.getopt.config.caseSensitive), but not "--Bar", "--bAr"
  etc. because the directive $(D
- std.getopt.config.caseInsensitive) turned sensitivity off before
+ utils.getopt.config.caseInsensitive) turned sensitivity off before
  option "bar" was parsed.
 
  $(B "Short" versus "long" options)
@@ -387,18 +387,18 @@ class GetOptException : Exception
 
  Single-letter options can be bundled together, i.e. "-abc" is the same as
  $(D "-a -b -c"). By default, this option is turned off. You can turn it on
- with the $(D std.getopt.config.bundling) directive:
+ with the $(D utils.getopt.config.bundling) directive:
 
  ---------
  bool foo, bar;
  getopt(args,
- std.getopt.config.bundling,
+ utils.getopt.config.bundling,
  "foo|f", &foo,
  "bar|b", &bar);
  ---------
 
  In case you want to only enable bundling for some of the parameters,
- bundling can be turned off with $(D std.getopt.config.noBundling).
+ bundling can be turned off with $(D utils.getopt.config.noBundling).
 
  $(B Required)
 
@@ -408,24 +408,24 @@ class GetOptException : Exception
  ---------
  bool foo, bar;
  getopt(args,
- std.getopt.config.required,
+ utils.getopt.config.required,
  "foo|f", &foo,
  "bar|b", &bar);
  ---------
 
- Only the option direclty following $(D std.getopt.config.required) is
+ Only the option direclty following $(D utils.getopt.config.required) is
  required.
 
  $(B Passing unrecognized options through)
 
  If an application needs to do its own processing of whichever arguments
  $(D getopt) did not understand, it can pass the
- $(D std.getopt.config.passThrough) directive to $(D getopt):
+ $(D utils.getopt.config.passThrough) directive to $(D getopt):
 
  ---------
  bool foo, bar;
  getopt(args,
- std.getopt.config.passThrough,
+ utils.getopt.config.passThrough,
  "foo", &foo,
  "bar", &bar);
  ---------
@@ -1099,8 +1099,8 @@ unittest
 	bool foo, bar;
 	args = ["program.name", "--foo", "--bAr"];
 	getopt(args,
-		std.getopt.config.caseSensitive,
-		std.getopt.config.passThrough,
+		utils.getopt.config.caseSensitive,
+		utils.getopt.config.passThrough,
 		"foo", &foo,
 		"bar", &bar);
 	assert(args[1] == "--bAr");
@@ -1110,7 +1110,7 @@ unittest
 	args = ["program.name", "--foo", "nonoption", "--bar"];
 	foo = bar = false;
 	getopt(args,
-		std.getopt.config.stopOnFirstNonOption,
+		utils.getopt.config.stopOnFirstNonOption,
 		"foo", &foo,
 		"bar", &bar);
 	assert(foo && !bar && args[1] == "nonoption" && args[2] == "--bar");
@@ -1118,7 +1118,7 @@ unittest
 	args = ["program.name", "--foo", "nonoption", "--zab"];
 	foo = bar = false;
 	getopt(args,
-		std.getopt.config.stopOnFirstNonOption,
+		utils.getopt.config.stopOnFirstNonOption,
 		"foo", &foo,
 		"bar", &bar);
 	assert(foo && !bar && args[1] == "nonoption" && args[2] == "--zab");
@@ -1133,7 +1133,7 @@ unittest
 	
 	args = ["program.name", "--foo", "nonoption", "--bar", "--", "--baz"];
 	getopt(args,
-		std.getopt.config.keepEndOfOptions,
+		utils.getopt.config.keepEndOfOptions,
 		"foo", &foo,
 		"bar", &bar);
 	assert(args == ["program.name", "nonoption", "--", "--baz"]);
@@ -1182,8 +1182,8 @@ unittest
 	getopt
 		(
 			args,
-			std.getopt.config.bundling,
-			//std.getopt.config.caseSensitive,
+			utils.getopt.config.bundling,
+			//utils.getopt.config.caseSensitive,
 			"linenum|l", &f_linenum,
 			"filename|n", &f_filename
 			);
@@ -1359,7 +1359,7 @@ unittest // implicit help option without config.passThrough
 	assert(r.helpWanted);
 }
 
-// Issue 13316 - std.getopt: implicit help option breaks the next argument
+// Issue 13316 - utils.getopt: implicit help option breaks the next argument
 unittest
 {
 	string[] args = ["program", "--help", "--", "something"];
@@ -1376,7 +1376,7 @@ unittest
 	assert(args == ["program", "nonoption", "--option"]);
 }
 
-// Issue 13317 - std.getopt: endOfOptions broken when it doesn't look like an option
+// Issue 13317 - utils.getopt: endOfOptions broken when it doesn't look like an option
 unittest
 {
 	auto endOfOptionsBackup = endOfOptions;
