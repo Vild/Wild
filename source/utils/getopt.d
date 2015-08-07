@@ -5,7 +5,7 @@
  This is because both ldc and gdc have 2.066.1.
 
  Every function, class, struct and enum will start with the letter 'w'.
- This is because when both ldc and gdc updates to 2.067, it will be as really easy to change to utils.getopt.
+ This is because when both ldc and gdc updates to 2.067, it will be as really easy to change to std.getopt.
  */
 
 

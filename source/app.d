@@ -2,6 +2,10 @@ import std.stdio;
 import utils.getopt;
 import std.typetuple;
 
+import wild.frontend.frontend;
+import wild.frontend.jsonfrontend;
+import wild.build.dependencytree;
+
 uint verbose;
 bool showVersion;
 bool clean;
@@ -16,6 +20,9 @@ enum runState {
 }
 
 int main(string[] args_) {
+	import backtrace : install, PrintOptions;
+	install(stderr, PrintOptions(2, true, 3, 3, true));
+
 	args = args_;
 	runState state = runState.BUILD;
 
@@ -69,12 +76,9 @@ int main(string[] args_) {
 
 int buildState() {
 	writeln("Building project...");
-
-	import wild.io.wildparser : RunTest;
-	RunTest();
-
-	if (clean)
-		writeln("Cleaning build files...");
+	Frontend frontend = new JsonFrontend("input.json");
+	DependencyTree depTree = new DependencyTree(frontend);
+	depTree.MakeDotGraph("test.dot");
 	return 0;
 }
 

@@ -5,9 +5,8 @@ __dummy.html
 *.obj
 dub.selections.json
 dub.userprefs
-wild
--*/wild
-.buildpath
-.project
-.settings
-app.gcno
+/wild
+
+test.dot
+d-linter.ini
+input.json
