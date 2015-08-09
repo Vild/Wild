@@ -4,7 +4,8 @@ import std.typetuple;
 
 import wild.frontend.frontend;
 import wild.frontend.jsonfrontend;
-import wild.build.dependencytree;
+import wild.parser.dependencytree;
+import wild.build.buildmanager;
 
 uint verbose;
 bool showVersion;
@@ -75,15 +76,17 @@ int main(string[] args_) {
 }
 
 int buildState() {
-	writeln("Building project...");
+	writefln("Building project...");
 	Frontend frontend = new JsonFrontend("input.json");
 	DependencyTree depTree = new DependencyTree(frontend);
+	BuildManager mgr = new BuildManager(depTree, frontend.Build);
 	depTree.MakeDotGraph("test.dot");
+	mgr.Build();
 	return 0;
 }
 
 int cleanState() {
-	writeln("Clean up project...");
+	writefln("Clean up project...");
 	return 0;
 }
 

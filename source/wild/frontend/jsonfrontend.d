@@ -5,6 +5,10 @@ import wild.frontend.frontend;
 import std.string;
 import std.file;
 import std.stdio;
+import std.algorithm.iteration : uniq;
+import std.algorithm.sorting : sort;
+import std.algorithm.mutation : SwapStrategy;
+import std.array : join, split;
 
 class JsonFrontend : Frontend {
 public:
@@ -49,9 +53,12 @@ private:
       JSONValue input = val["input"];
       assert(processor.type == JSON_TYPE.STRING);
       assert(input.type == JSON_TYPE.STRING);
+      string extra = "";
+      try {
+        extra = val["extra"].str;
+      } catch (Exception e) {}
 
-      AddTarget(processor.str, key, input.str, true);
-      ToBuild(key);
+      AddTarget(processor.str, key, input.str, true, extra);
       outputedFiles ~= key;
     }
 
@@ -61,9 +68,12 @@ private:
       JSONValue input = val["input"];
       assert(processor.type == JSON_TYPE.STRING);
       assert(input.type == JSON_TYPE.STRING);
+      string extra = "";
+      try {
+        extra = val["extra"].str;
+      } catch (Exception e) {}
 
-      AddTarget(processor.str, key, input.str);
-      ToBuild(key);
+      AddTarget(processor.str, key, input.str, false, extra);
       outputedFiles ~= key;
     }
 
@@ -73,8 +83,12 @@ private:
       JSONValue input = val["input"];
       assert(processor.type == JSON_TYPE.STRING);
       assert(input.type == JSON_TYPE.STRING);
+      string extra = "";
+      try {
+        extra = val["extra"].str;
+      } catch (Exception e) {}
 
-      rules ~= Rule(key, processor.str, input.str);
+      rules ~= Rule(key, processor.str, input.str, extra);
     }
 
     foreach(JSONValue val; root["targets"].array) {
@@ -108,7 +122,7 @@ private:
           foreach(file; inFiles) {
             const string inFile = file.name;
             const string outFile = outputBasePath ~ inFile[inputBasePath.length .. $ - inputExtension.length] ~ outputExtension;
-            AddTarget(val.processor, outFile, inFile);
+            AddTarget(val.processor, outFile, inFile, false, val.extra);
             outputedFiles ~= outFile;
           }
         } catch (Exception e) {}
@@ -120,14 +134,14 @@ private:
 
         try {
           auto inFiles = dirEntries(inputBasePath, "*" ~ inputExtension, SpanMode.breadth);
-          string files = "";
+          string[] files;
           foreach(file; inFiles)
-            files ~= " " ~ file.name;
-          AddTarget(val.processor, val.name, files);
+            files ~= file.name;
+          AddTarget(val.processor, val.name, files.uniq.join(" "), false, val.extra);
           outputedFiles ~= val.name;
         } catch (Exception e) {}
       } else if (!multipleInput && !multipleOutput) {
-        AddTarget(val.processor, val.name, val.input);
+        AddTarget(val.processor, val.name, val.input, false, val.extra);
         outputedFiles ~= val.name;
       } else
         assert(0 < 1, "You can't have multiple output for one input!");
@@ -154,7 +168,7 @@ private:
             continue;
           const string inFile = file;
           const string outFile = outputBasePath ~ inFile[inputBasePath.length .. $ - inputExtension.length] ~ outputExtension;
-          AddTarget(val.processor, outFile, inFile);
+          AddTarget(val.processor, outFile, inFile, false, val.extra);
           outputedFiles ~= outFile;
         }
       } else if (multipleInput && !multipleOutput) {
@@ -163,13 +177,18 @@ private:
         const string inputBasePath = in_[0];
         const string inputExtension = in_[1];
 
-        string files = "";
+        string[] files;
+
+        if (auto target = val.name in targets) //Continue with the inputs if it already has been added
+          files = target.input.split(" ");
+
         foreach(file; outputedFiles) {
           if (!file.startsWith(inputBasePath) || !file.endsWith(inputExtension))
             continue;
-          files ~= " " ~ file;
+          files ~= file;
         }
-        AddTarget(val.processor, val.name, files);
+        sort!("toUpper(a) < toUpper(b)", SwapStrategy.stable)(files); //"
+        AddTarget(val.processor, val.name, files.uniq.join(" "), false, val.extra);
         outputedFiles ~= val.name;
       }
     }
@@ -180,4 +199,5 @@ struct Rule {
   string name;
   string processor;
   string input;
+  string extra;
 }

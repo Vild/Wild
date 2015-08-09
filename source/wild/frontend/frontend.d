@@ -5,7 +5,6 @@ public:
   this() {
     AddProcessor("shell", "bash", "-c $in $out");
     AddProcessor("script", "bash", "$in $out");
-    AddTarget("phony", "always", "");
   }
 
   string ResolveString(string str) {
@@ -69,11 +68,12 @@ protected:
     processors[name] = Processor(name, command, arguments);
   }
 
-  void AddTarget(string command, string output, string input, bool always = false) {
+  void AddTarget(string command, string output, string input, bool always, string extra) {
     command = ResolveString(command);
     output = ResolveString(output);
     input = ResolveString(input);
-    targets[output] = Target(command, output, input, always);
+    extra = ResolveString(extra);
+    targets[output] = Target(command, output, input, always, extra);
   }
 
   void ToBuild(string target) {
@@ -102,4 +102,5 @@ struct Target {
   string output;
   string input;
   bool always;
+  string extra;
 }

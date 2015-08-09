@@ -5,6 +5,6 @@
 	"authors": ["wildn00b"],
 	"dependencies": {
 		"backtrace-d": "~>0.1.0",
-		"relationlist": "~>2.0.1"
+		"relationlist": "~>2.1.1"
 	}
 }

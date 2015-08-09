@@ -1,11 +1,11 @@
-module wild.build.dependencytree;
+module wild.parser.dependencytree;
 
 /+
 
 Processor --> Target         //Processor is compiled before used
 Target    --> Processor      //Target needs processor to compile
-Target    --> Target(source) //Target depends on source file or
-                               source file generator
+Target    --> FileNode       //Target need file to compile
+FileNode  --> Target         //A target can generate file
 
 
 +/
@@ -14,6 +14,13 @@ import std.variant : Algebraic;
 import relationlist;
 import wild.frontend.frontend;
 import std.string : strip;
+
+alias Node = Algebraic!(Processor, Target, FileNode);
+struct FileNode {
+  string filename;
+  bool always;
+}
+
 
 class DependencyTree {
 public:
@@ -26,19 +33,20 @@ public:
       auto entry = AddTarget(target);
 
       if (auto child = target.command in frontend.Processors)
-        entry.AddChild(AddProcessor(*child));
+        entry.AddChild(AddProcessor(*child), false);
       else
-        entry.AddChild(AddFile(FileNode(target.command)));
+        entry.AddChild(AddFile(FileNode(target.command, false)), false);
 
       string[] inputs = target.input.strip.split(" ");
       foreach (input; inputs) {
         input = input.strip;
         if (!input.length)
           continue;
-        if (auto child = input in frontend.Targets)
-          entry.AddChild(AddTarget(*child));
+        if (auto child = input in frontend.Targets) //Add a file node with a
+                                                    //target attached
+          entry.AddChild(AddFile(FileNode(input, child.always)).AddChild(AddTarget(*child), false), false);
         else
-          entry.AddChild(AddFile(FileNode(input)));
+          entry.AddChild(AddFile(FileNode(input, false)), false);
       }
     }
 
@@ -47,9 +55,9 @@ public:
       auto entry = AddProcessor(processor);
 
       if (auto child = processor.command in frontend.Targets)
-        entry.AddChild(AddTarget(*child));
+        entry.AddChild(AddTarget(*child), false);
       else
-        entry.AddChild(AddFile(FileNode(processor.command)));
+        entry.AddChild(AddFile(FileNode(processor.command, false)), false);
     }
 
 
@@ -62,7 +70,7 @@ public:
 		fp.writefln("\tfontname=\"Tewi\";");
 		foreach(entry; nodes) {
       import std.array : replace;
-			fp.writefln("\tL_%s [label=\"%s\"];", entry.ID, entry.Value.toString().replace("\"", "\\\""));
+			fp.writefln("\tL_%s [label=\"%s\"];", entry.ID, entry.Value.toString().replace("\\", "\\\\").replace("\"", "\\\""));
 			foreach(parent; entry.GetParents())
 				fp.writefln("\tL_%s -> L_%s;", parent.ID, entry.ID);
 		}
@@ -70,14 +78,27 @@ public:
 		fp.close();
   }
 
+  RelationEntry!Node GetProcessor(string name) {
+    if (auto id = "p_"~name in lookup)
+      return nodes.Values[*id];
+    return null;
+  }
+  RelationEntry!Node GetTarget(string name) {
+    if (auto id = "t_"~name in lookup)
+      return nodes.Values[*id];
+    return null;
+  }
+  RelationEntry!Node GetFile(string name) {
+    if (auto id = "f_"~name in lookup)
+      return nodes.Values[*id];
+    return null;
+  }
+
+  @property RelationList!Node Nodes() { return nodes; }
+
 private:
   Frontend frontend;
 
-  struct FileNode {
-    string filename;
-  }
-
-  alias Node = Algebraic!(Processor, Target, FileNode);
   RelationList!Node nodes;
   ulong[string] lookup;
 
