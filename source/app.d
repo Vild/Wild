@@ -6,6 +6,7 @@ import wild.frontend.frontend;
 import wild.frontend.jsonfrontend;
 import wild.parser.dependencytree;
 import wild.build.buildmanager;
+import wild.cache.cache;
 
 uint verbose;
 bool showVersion;
@@ -17,7 +18,8 @@ string[] args;
 enum runState {
 	BUILD,
 	CLEAN,
-	CONFIG
+	CONFIG,
+	HIERARCHY
 }
 
 int main(string[] args_) {
@@ -55,6 +57,9 @@ int main(string[] args_) {
 		} else if (args[1] == "config") {
 			state = runState.CONFIG;
 			changed = true;
+		} else if (args[1] == "hierarchy") {
+			state = runState.HIERARCHY;
+			changed = true;
 		}
 
 		if (changed) {
@@ -65,31 +70,47 @@ int main(string[] args_) {
 		}
 	}
 
+	string[] inputs = args[1..$];
+
 	if (state == runState.BUILD)
-		return buildState();
+		return buildState(inputs);
 	else if (state == runState.CLEAN)
-		return cleanState();
+		return cleanState(inputs);
 	else if (state == runState.CONFIG)
-		return configState();
-	else
-		assert(0, "UNKNOWN RUNSTATE!");
+		return configState(inputs);
+	else if (state == runState.HIERARCHY)
+		return hierarchyState(inputs);
+	assert(0);
 }
 
-int buildState() {
+int buildState(string[] inputs) {
+	assert(inputs.length, "You need a build file");
 	writefln("Building project...");
-	Frontend frontend = new JsonFrontend("input.json");
+	Cache cache = new Cache(".wild-cache");
+	Frontend frontend = new JsonFrontend(inputs[0]);
 	DependencyTree depTree = new DependencyTree(frontend);
-	BuildManager mgr = new BuildManager(depTree, frontend.Build);
+	BuildManager mgr = new BuildManager(depTree, cache, frontend.Build);
 	depTree.MakeDotGraph("test.dot");
 	mgr.Build();
+	cache.Save();
 	return 0;
 }
 
-int cleanState() {
+int cleanState(string[] inputs) {
 	writefln("Clean up project...");
 	return 0;
 }
 
-int configState() {
+int configState(string[] inputs) {
 	return -1;
+}
+
+int hierarchyState(string[] inputs) {
+	assert(inputs.length, "You need a build file");
+	Frontend frontend = new JsonFrontend(inputs[0]);
+	DependencyTree depTree = new DependencyTree(frontend);
+	depTree.MakeDotGraph("test.dot");
+	import std.process: spawnProcess, wait;
+	wait(spawnProcess(["dot", "-Tx11", "test.dot"]));
+	return 0;
 }

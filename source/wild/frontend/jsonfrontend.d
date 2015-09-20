@@ -24,7 +24,11 @@ private:
   string[] outputedFiles;
 
   void load(string file) {
-    JSONValue root = parseJSON(readText(file));
+    string text = readText(file);
+    if (text[0 .. 2] == "#!")
+      text = text[text.indexOf('\n')..$];
+
+    JSONValue root = parseJSON(text);
     foreach(string key, JSONValue val; root["variables"].object) {
       assert(val.type == JSON_TYPE.STRING);
       AddVariable(key, val.str);

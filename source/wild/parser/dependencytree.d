@@ -19,6 +19,7 @@ alias Node = Algebraic!(Processor, Target, FileNode);
 struct FileNode {
   string filename;
   bool always;
+  bool generated;
 }
 
 
@@ -32,10 +33,10 @@ public:
       import std.array : split;
       auto entry = AddTarget(target);
 
-      if (auto child = target.command in frontend.Processors)
+      if (auto child = target.processor in frontend.Processors)
         entry.AddChild(AddProcessor(*child), false);
       else
-        entry.AddChild(AddFile(FileNode(target.command, false)), false);
+        entry.AddChild(AddFile(FileNode(target.processor, false, false)), false);
 
       string[] inputs = target.input.strip.split(" ");
       foreach (input; inputs) {
@@ -44,9 +45,9 @@ public:
           continue;
         if (auto child = input in frontend.Targets) //Add a file node with a
                                                     //target attached
-          entry.AddChild(AddFile(FileNode(input, child.always)).AddChild(AddTarget(*child), false), false);
+          entry.AddChild(AddFile(FileNode(input, child.always, true)).AddChild(AddTarget(*child), false), false);
         else
-          entry.AddChild(AddFile(FileNode(input, false)), false);
+          entry.AddChild(AddFile(FileNode(input, false, true)), false);
       }
     }
 
@@ -57,7 +58,7 @@ public:
       if (auto child = processor.command in frontend.Targets)
         entry.AddChild(AddTarget(*child), false);
       else
-        entry.AddChild(AddFile(FileNode(processor.command, false)), false);
+        entry.AddChild(AddFile(FileNode(processor.command, false, false)), false);
     }
 
 
@@ -70,7 +71,29 @@ public:
 		fp.writefln("\tfontname=\"Tewi\";");
 		foreach(entry; nodes) {
       import std.array : replace;
-			fp.writefln("\tL_%s [label=\"%s\"];", entry.ID, entry.Value.toString().replace("\\", "\\\\").replace("\"", "\\\""));
+
+      string shape;
+      string color;
+      if (entry.Value.peek!Processor) {
+        shape = "octagon";
+        color = "orange";
+      } else if (entry.Value.peek!Target) {
+        shape = "box";
+        color = "purple";
+      } else if (entry.Value.peek!FileNode) {
+        shape = "house";
+        color = "blue";
+      } else {
+        shape = "doublecircle";
+        color = "red";
+      }
+
+			fp.writefln("\tL_%s [label=\"%s\", shape=\"%s\", color=\"%s\"];",
+        entry.ID,
+        entry.Value.toString().replace("\\", "\\\\").replace("\"", "\\\""),
+        shape,
+        color
+      );
 			foreach(parent; entry.GetParents())
 				fp.writefln("\tL_%s -> L_%s;", parent.ID, entry.ID);
 		}
@@ -121,11 +144,11 @@ private:
   }
 
   RelationEntry!Node AddProcessor(Processor p) {
-    if (auto id = "p_"~p.command in lookup)
+    if (auto id = "p_"~p.name in lookup)
       return nodes.Values[*id];
 
     auto entry = nodes.Add(Node(p));
-    lookup["p_"~p.command] = entry.ID;
+    lookup["p_"~p.name] = entry.ID;
     return entry;
   }
 }

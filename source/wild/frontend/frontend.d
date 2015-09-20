@@ -3,8 +3,6 @@ module wild.frontend.frontend;
 abstract class Frontend {
 public:
   this() {
-    AddProcessor("shell", "bash", "-c $in $out");
-    AddProcessor("script", "bash", "$in $out");
   }
 
   string ResolveString(string str) {
@@ -68,12 +66,12 @@ protected:
     processors[name] = Processor(name, command, arguments);
   }
 
-  void AddTarget(string command, string output, string input, bool always, string extra) {
-    command = ResolveString(command);
+  void AddTarget(string processor, string output, string input, bool always, string extra) {
+    processor = ResolveString(processor);
     output = ResolveString(output);
     input = ResolveString(input);
     extra = ResolveString(extra);
-    targets[output] = Target(command, output, input, always, extra);
+    targets[output] = Target(processor, output, input, always, extra);
   }
 
   void ToBuild(string target) {
@@ -98,7 +96,7 @@ struct Processor {
 }
 
 struct Target {
-  string command;
+  string processor;
   string output;
   string input;
   bool always;

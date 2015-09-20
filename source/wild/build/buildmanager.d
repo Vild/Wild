@@ -3,6 +3,7 @@ module wild.build.buildmanager;
 import std.parallelism;
 import wild.parser.dependencytree;
 import wild.frontend.frontend;
+import wild.cache.cache;
 import relationlist;
 import std.process;
 import std.stdio;
@@ -11,10 +12,10 @@ import std.c.stdlib : exit;
 
 class BuildManager {
 public:
-  this(DependencyTree depTree, string[] targets, size_t workers = totalCPUs - 1) {
+  this(DependencyTree depTree, Cache cache, string[] targets) {
     this.depTree = depTree;
+    this.cache = cache;
     this.targets = targets;
-    writeln("TARGETS: ", targets);
   }
 
   void Build() {
@@ -24,6 +25,7 @@ public:
 
 private:
   DependencyTree depTree;
+  Cache cache;
   string[] targets;
   bool[RelationEntry!Node] hasBuilt;
   bool[string] scriptRun;
@@ -35,23 +37,25 @@ private:
       else if (auto t = node.Value.peek!Target)
         if (t.input in scriptRun)
           return false;
-      if (!rebuild) {
-        if (auto f = node.Value.peek!FileNode)
-          rebuild = f.always;
-        else if (auto t = node.Value.peek!Target)
-          rebuild = t.always;
-      }
+      if (auto f = node.Value.peek!FileNode) {
+        //if (f.generated)
+        //  return false;
+        rebuild |= f.always | cache.Changed(f.filename);
+      } else if (auto t = node.Value.peek!Target)
+        rebuild |= t.always;
 
-      Processor * p;
+
+      Processor * p = null;
+
+      bool childRebuilt = false;
 
       foreach (child; /*parallel*/(node.Children)) {
         if (auto tmp = child.Value.peek!Processor) //Should only have one child
           p = tmp;                                 //That is a processor
-        if (traverse(child, rebuild))
-          rebuild = true;
+        childRebuilt = traverse(child, rebuild);
       }
 
-      rebuild = true; //TODO: Implements cache check
+      rebuild |= childRebuilt;
 
       if (rebuild)
         if (auto t = node.Value.peek!Target) {
@@ -78,7 +82,8 @@ private:
           }
 
           hasBuilt[node] = true;
-          if (t.command == "script" || t.command == "shell")
+          cache.Update(t.output);
+          if (t.processor == "script" || t.processor == "shell")
             scriptRun[t.input] = true;
         }
 
