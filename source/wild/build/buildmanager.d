@@ -18,9 +18,9 @@ public:
     this.targets = targets;
   }
 
-  void Build() {
+  void Build(bool forceRebuild) {
     foreach (target; targets)
-      build(target);
+      build(target, forceRebuild);
   }
 
 private:
@@ -30,7 +30,7 @@ private:
   bool[RelationEntry!Node] hasBuilt;
   bool[string] scriptRun;
 
-  void build(string target) {
+  void build(string target, bool forceRebuild) {
     bool traverse(RelationEntry!Node node, bool rebuild = false) {
       if (node in hasBuilt)
         return false;
@@ -92,7 +92,7 @@ private:
     auto root = depTree.GetTarget(target);
     assert(root, "Target '"~target~"' not found!");
     writefln("Starting traversing...");
-    traverse(root);
+    traverse(root, forceRebuild);
     writefln("Done traversing!");
     //pool.finish(true);
   }

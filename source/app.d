@@ -11,7 +11,7 @@ import wild.cache.cache;
 uint verbose;
 bool showVersion;
 bool clean;
-bool forceClean;
+bool force;
 
 string[] args;
 
@@ -35,7 +35,7 @@ int main(string[] args_) {
 		"v|verbose+", "Sets verbose level", &verbose,
 		"version", "Shows the version", &showVersion,
 		"c|clean", "Clean after build", &clean,
-		"f|force", "Forces clean", &forceClean
+		"f|force", "Forces the current command", &force
 		);
 
 	if (result.helpWanted) {
@@ -90,7 +90,11 @@ int buildState(string[] inputs) {
 	Frontend frontend = new JsonFrontend(inputs[0]);
 	DependencyTree depTree = new DependencyTree(frontend);
 	BuildManager mgr = new BuildManager(depTree, cache, frontend.Build);
-	mgr.Build();
+	bool rebuild = cache.Changed(inputs[0]) || force;
+	mgr.Build(rebuild);
+
+	if (rebuild)
+		cache.Update(inputs[0]);
 	cache.Save();
 	return 0;
 }
