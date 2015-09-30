@@ -1,5 +1,5 @@
 import std.stdio;
-import utils.getopt;
+import std.getopt;
 import std.typetuple;
 
 import wild.frontend.frontend;
