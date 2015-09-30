@@ -39,7 +39,7 @@ int main(string[] args_) {
 		);
 
 	if (result.helpWanted) {
-		defaultGetoptPrinter(args[0]~": [build|clean|config]", result.options);
+		defaultGetoptPrinter(args[0]~": [build|clean|config|hierarchy]", result.options);
 		return 0;
 	} else if (showVersion) {
 		writeln(args[0], " Version ALPHA!");
