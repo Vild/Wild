@@ -33,7 +33,7 @@ int main(string[] args_) {
 		config.bundling,
 		config.passThrough,
 		"v|verbose+", "Sets verbose level", &verbose,
-		"version", "Shows the verson", &showVersion,
+		"version", "Shows the version", &showVersion,
 		"c|clean", "Clean after build", &clean,
 		"f|force", "Forces clean", &forceClean
 		);
