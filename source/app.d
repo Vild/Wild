@@ -90,7 +90,6 @@ int buildState(string[] inputs) {
 	Frontend frontend = new JsonFrontend(inputs[0]);
 	DependencyTree depTree = new DependencyTree(frontend);
 	BuildManager mgr = new BuildManager(depTree, cache, frontend.Build);
-	depTree.MakeDotGraph("test.dot");
 	mgr.Build();
 	cache.Save();
 	return 0;
@@ -109,8 +108,8 @@ int hierarchyState(string[] inputs) {
 	assert(inputs.length, "You need a build file");
 	Frontend frontend = new JsonFrontend(inputs[0]);
 	DependencyTree depTree = new DependencyTree(frontend);
-	depTree.MakeDotGraph("test.dot");
+	depTree.MakeDotGraph(inputs[0]~".dot");
 	import std.process: spawnProcess, wait;
-	wait(spawnProcess(["dot", "-Tx11", "test.dot"]));
+	wait(spawnProcess(["dot", "-Tx11", inputs[0]~".dot"]));
 	return 0;
 }
