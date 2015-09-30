@@ -19,7 +19,6 @@ public:
   }
 
 private:
-  string[] sources;
   Rule[] rules;
   string[] outputedFiles;
 
@@ -35,11 +34,6 @@ private:
     }
 
     ResolveVariables();
-
-    foreach(JSONValue val; root["sources"].array) {
-      assert(val.type == JSON_TYPE.STRING);
-      sources ~= val.str;
-    }
 
     foreach(string key, JSONValue val; root["processors"].object) {
       assert(val.type == JSON_TYPE.OBJECT);
