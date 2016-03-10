@@ -1,0 +1,86 @@
+@PowerNex = Project {
+	Name = "PowerNex";
+
+	@KernelDFlags = "-m64 -fPIC -debug -c -gc -IKernel/src -defaultlib= -debuglib= -version=bare_metal -debug=allocations";
+	@KernelAFlags = "--64";
+	@KernelLFlags = "-z max-page-size=0x1000 -T Kernel/src/Kernel.ld";
+
+	@ISOFlags = "-d /usr/lib/grub/i386-pc";
+	@ToolFlags = "-odUtils/Object";
+	ENV["PATH"] += "cc/bin";
+
+	@KernelDCompiler = Processor {
+		|dmd @KernelDFlags @Flags -of@Out @In
+	};
+	@KernelACompiler = Processor {
+		|x86_64-powernex-as @KernelDFlags @Flags -o @Out @In
+	};
+	@KernelLinker = Processor {
+		|x86_64-powernex-ld @KernelLFlags @Flags -o @Out @In
+	};
+	@ISO = Processor {
+		|grub-mkrescue @ISOFlags @Flags -o @Out @In
+	};
+	@ToolCompiler = Processor {
+		|dmd @ToolFlags @Flags -of@Out @In
+	};
+	@GenSymbols = Processor {
+		|Utils/GenerateSymbols @Flags @In @Out
+	};
+	@MakeInitrd = Processor {
+		|Utils/MakeInitrd @Flags @In @Out
+	};
+
+	/*@GenerateSymbols = */ Target {
+		Output = "Utils/GenerateSymbols";
+		Input = "Utils/GenerateSymbols.d";
+		@GenSymbols([@DFLAGS], In, Out);
+	};
+	/*@MakeInitrd = */ Target {
+		Output = "Utils/MakeInitrd";
+		Input = "Utils/MakeInitrd.d";
+		@MakeInitrd([], In, Out);
+	};
+	/*@CompileInfo = */ Target {
+		Output = "Utils/MakeInitrd";
+		Input = null;
+		Behavior = Always;
+		@MakeInitrd([], In, Out);
+	};
+	/*@KernelDObjects = */ Target {
+		Output = "Kernel/Object/*-D.o";
+		Input = "Kernel/Source/*.d";
+		@KernelDCompiler([], In, Out);
+	};
+	/*@KernelAObjects = */ Target {
+		Output = "Kernel/Object/*-A.o";
+		Input = "Kernel/Source/*.S";
+		@KernelACompiler([], In, Out);
+	};
+	/*@Kernel = */ Target {
+		Output = "Disk/boot/PowerNex.krl";
+		Input = "Kernel/Object/*.o";
+		@KernelLinker([], In, Out);
+	};
+	/*@KernelMap = */ Target {
+		Output = "Disk/boot/PowerNex.map";
+		Input = "Disk/boot/PowerNex.krl";
+		@GenerateSymbols([], In, Out);
+	};
+	/*@KernelInitrd = */ Target {
+		Output = "Disk/boot/PowerNex.dsk";
+		Input = "Initrd";
+		@MakeInitrd([], In, Out);
+	};
+	@KernelISO = Target {
+		Output = "PowerNex.iso";
+		Input = "Disk";
+		@ISO([], In, Out);
+	};
+
+	Output = [@KernelISO];
+};
+
+Build += @PowerNex;
+
+Import "Userspace.wild";

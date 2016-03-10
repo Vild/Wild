@@ -6,7 +6,8 @@ __dummy.html
 dub.selections.json
 dub.userprefs
 /wild
-
 test.dot
 d-linter.ini
 input.json
+/example
+.wild-cache

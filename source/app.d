@@ -2,11 +2,12 @@ import std.stdio;
 import std.getopt;
 import std.typetuple;
 
-import wild.frontend.frontend;
-import wild.frontend.jsonfrontend;
-import wild.parser.dependencytree;
-import wild.build.buildmanager;
-import wild.cache.cache;
+import Wild.Frontend.Frontend;
+import Wild.Frontend.JSON.JSONFrontend;
+import Wild.Frontend.Wild.WildFrontend;
+import Wild.Parser.DependencyTree;
+import Wild.Build.BuildManager;
+import Wild.Cache.Cache;
 
 uint verbose;
 bool showVersion;
@@ -23,23 +24,19 @@ enum runState {
 }
 
 int main(string[] args_) {
-	import backtrace : install, PrintOptions;
-	install(stderr, PrintOptions(2, true, 3, 3, true));
+	//import backtrace : install, PrintOptions;
+
+	//install(stderr, PrintOptions(2, true, 3, 3, true));
 
 	args = args_;
 	runState state = runState.BUILD;
 
-	auto result = getopt(args,
-		config.bundling,
-		config.passThrough,
-		"v|verbose+", "Sets verbose level", &verbose,
-		"version", "Shows the version", &showVersion,
-		"c|clean", "Clean after build", &clean,
-		"f|force", "Forces the current command", &force
-		);
+	auto result = getopt(args, config.bundling, config.passThrough, "v|verbose+", "Sets verbose level", &verbose,
+			"version", "Shows the version", &showVersion, "c|clean", "Clean after build", &clean, "f|force",
+			"Forces the current command", &force);
 
 	if (result.helpWanted) {
-		defaultGetoptPrinter(args[0]~": [build|clean|config|hierarchy]", result.options);
+		defaultGetoptPrinter(args[0] ~ ": [build|clean|config|hierarchy]", result.options);
 		return 0;
 	} else if (showVersion) {
 		writeln(args[0], " Version ALPHA!");
@@ -64,13 +61,13 @@ int main(string[] args_) {
 
 		if (changed) {
 			if (args.length > 2)
-				args = args[0..1] ~ args[2 .. $];
+				args = args[0 .. 1] ~ args[2 .. $];
 			else
-				args = args[0..1];
+				args = args[0 .. 1];
 		}
 	}
 
-	string[] inputs = args[1..$];
+	string[] inputs = args[1 .. $];
 
 	if (state == runState.BUILD)
 		return buildState(inputs);
@@ -87,7 +84,7 @@ int buildState(string[] inputs) {
 	assert(inputs.length, "You need a build file");
 	writefln("Building project...");
 	Cache cache = new Cache(".wild-cache");
-	Frontend frontend = new JsonFrontend(inputs[0]);
+	Frontend frontend = new WildFrontend(inputs[0]);
 	DependencyTree depTree = new DependencyTree(frontend);
 	BuildManager mgr = new BuildManager(depTree, cache, frontend.Build);
 	bool rebuild = cache.Changed(inputs[0]) || force;
@@ -110,10 +107,11 @@ int configState(string[] inputs) {
 
 int hierarchyState(string[] inputs) {
 	assert(inputs.length, "You need a build file");
-	Frontend frontend = new JsonFrontend(inputs[0]);
+	Frontend frontend = new JSONFrontend(inputs[0]);
 	DependencyTree depTree = new DependencyTree(frontend);
-	depTree.MakeDotGraph(inputs[0]~".dot");
-	import std.process: spawnProcess, wait;
-	wait(spawnProcess(["dot", "-Tx11", inputs[0]~".dot"]));
+	depTree.MakeDotGraph(inputs[0] ~ ".dot");
+	import std.process : spawnProcess, wait;
+
+	wait(spawnProcess(["dot", "-Tx11", inputs[0] ~ ".dot"]));
 	return 0;
 }
