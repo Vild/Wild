@@ -23,7 +23,6 @@
 		|x86_64-powernex-ld @KernelLFlags -o @Out @In
 	};
 	@GenSymbols = Processor {
-		Input = [@GenerateSymbols];
 		|Utils/GenerateSymbols @In @Out
 	};
 

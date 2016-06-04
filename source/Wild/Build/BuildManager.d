@@ -69,7 +69,7 @@ private:
 					auto proc = executeShell(p.command ~ " " ~ args);
 					if (proc.status != 0) {
 						writeln("\x1b[31;1m", proc.output, "\x1b[0m");
-						exit(0);
+						exit(proc.status);
 					} else
 						writeln("\x1b[32;1m", proc.output, "\x1b[0m");
 
@@ -78,14 +78,14 @@ private:
 					proc = executeShell(extra);
 					if (proc.status != 0) {
 						writeln("\x1b[31;1m", proc.output, "\x1b[0m");
-						exit(0);
+						exit(proc.status);
 					} else
 						writeln("\x1b[32;1m", proc.output, "\x1b[0m");
 
 					hasBuilt[node] = true;
 					cache.Update(t.output);
-					if (t.processor == "script" || t.processor == "shell")
-						scriptRun[t.input] = true;
+					/*if (t.processor == "script" || t.processor == "shell")
+						scriptRun[t.input] = true;*/
 				}
 
 			return rebuild;

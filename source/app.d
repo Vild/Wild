@@ -3,7 +3,7 @@ import std.getopt;
 import std.typetuple;
 
 import Wild.Frontend.Frontend;
-import Wild.Frontend.JSON.JSONFrontend;
+//import Wild.Frontend.JSON.JSONFrontend;
 import Wild.Frontend.Wild.WildFrontend;
 import Wild.Parser.DependencyTree;
 import Wild.Build.BuildManager;
@@ -14,8 +14,6 @@ bool showVersion;
 bool clean;
 bool force;
 
-string[] args;
-
 enum runState {
 	BUILD,
 	CLEAN,
@@ -23,12 +21,7 @@ enum runState {
 	HIERARCHY
 }
 
-int main(string[] args_) {
-	//import backtrace : install, PrintOptions;
-
-	//install(stderr, PrintOptions(2, true, 3, 3, true));
-
-	args = args_;
+int main(string[] args) {
 	runState state = runState.BUILD;
 
 	auto result = getopt(args, config.bundling, config.passThrough, "v|verbose+", "Sets verbose level", &verbose,
