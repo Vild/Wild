@@ -84,7 +84,7 @@ int buildState(string[] inputs) {
 	assert(inputs.length, "You need a build file");
 	writefln("Building project...");
 	Cache cache = new Cache(".wild-cache");
-	Frontend frontend = new WildFrontend(inputs[0]);
+	Frontend frontend = new WildFrontend(inputs[0]); //new WildFrontend(inputs[0]);
 	DependencyTree depTree = new DependencyTree(frontend);
 	BuildManager mgr = new BuildManager(depTree, cache, frontend.Build);
 	bool rebuild = cache.Changed(inputs[0]) || force;
@@ -107,7 +107,7 @@ int configState(string[] inputs) {
 
 int hierarchyState(string[] inputs) {
 	assert(inputs.length, "You need a build file");
-	Frontend frontend = new JSONFrontend(inputs[0]);
+	Frontend frontend = new WildFrontend(inputs[0]);
 	DependencyTree depTree = new DependencyTree(frontend);
 	depTree.MakeDotGraph(inputs[0] ~ ".dot");
 	import std.process : spawnProcess, wait;

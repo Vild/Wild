@@ -9,13 +9,14 @@ import std.typecons;
 
 class Parser {
 public:
-	this(Lexer lexer) {
+	this(string file, Lexer lexer) {
+		this.file = file;
 		this.lexer = lexer;
 		root = new BlockStatement(this, null);
 		tokens = lexer.Tokens; //Remove overhead
 		run();
 		if (!processedAll)
-			throw new Exception("\nTODO: havn't processed all tokens");
+			throw new Exception("\nTODO: haven't processed all tokens");
 	}
 
 	@property BlockStatement Root() {
@@ -23,6 +24,7 @@ public:
 	}
 
 private:
+	string file;
 	Lexer lexer;
 	BlockStatement root;
 	Token[] tokens;
@@ -64,6 +66,8 @@ private:
 			stmt = _;
 		else if (auto _ = getImport())
 			stmt = _;
+		else if (auto _ = getConcat())
+			stmt = _;
 		else if (auto _ = getKeyword())
 			stmt = _;
 		else if (auto _ = getSymbol())
@@ -77,7 +81,7 @@ private:
 		else if (auto _ = getArray())
 			stmt = _;
 		else
-			throw new UnknownStatementException(this, tokens, current);
+			throw new UnknownStatementException(this, file, tokens, current);
 
 		if (auto _ = getAssignment(stmt))
 			stmt = _;
@@ -115,6 +119,43 @@ private:
 		ValueToken value = match!(ValueToken, ValueType.String)[0];
 
 		return new ImportStatement(this, keyword, value);
+	}
+
+	Statement getConcat() {
+		ConcatData[] data;
+		if (has!(KeywordToken, OperatorToken, OperatorType.Concat)) {
+			KeywordToken keyword = peek!KeywordToken[0];
+			if (!(keyword.isType(KeywordType.In) || keyword.isType(KeywordType.Out)))
+				return null;
+
+			data ~= ConcatData(get!KeywordToken[0]);
+		} else if (has!(ValueToken, OperatorToken, OperatorType.Concat)) {
+			ValueToken value = peek!ValueToken[0];
+			if (!value.isType(ValueType.String))
+				return null;
+
+			data ~= ConcatData(get!ValueToken[0]);
+		} else
+			return null;
+
+		while (has!(OperatorToken, OperatorType.Concat)) {
+			get!OperatorToken;
+			if (has!KeywordToken) {
+				KeywordToken keyword = peek!KeywordToken[0];
+				if (!(keyword.isType(KeywordType.In) || keyword.isType(KeywordType.Out)))
+					throw new UnknownStatementException(this, file, tokens, current);
+
+				data ~= ConcatData(get!KeywordToken[0]);
+			} else if (has!ValueToken) {
+				ValueToken value = peek!ValueToken[0];
+				if (!value.isType(ValueType.String))
+					throw new UnknownStatementException(this, file, tokens, current);
+
+				data ~= ConcatData(get!ValueToken[0]);
+			} else
+				throw new UnknownStatementException(this, file, tokens, current);
+		}
+		return new ConcatStatement(this, data);
 	}
 
 	Statement getKeyword() {
@@ -273,7 +314,7 @@ private:
 	auto match(pattern...)() {
 		import std.stdio;
 
-		enum code = genericPeekImpl!("throw new ExpectedException!%s(this, tokens, current+%d);", "p.stringof, idx", pattern);
+		enum code = genericPeekImpl!("throw new ExpectedException!%s(this, file, tokens, current+%d);", "p.stringof, idx", pattern);
 		//pragma(msg, code);
 		mixin(code);
 

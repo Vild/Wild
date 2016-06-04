@@ -6,6 +6,7 @@ import std.string;
 import Wild.Frontend.Wild.Lexer.Lexer;
 import std.range;
 import std.conv;
+import std.path;
 
 /+
 pointer = to!string(' '.repeat.take(format("Line %d: ", endPos[0]).length));
@@ -15,7 +16,8 @@ pointer = to!string(' '.repeat.take(format("Line %d: ", endPos[0]).length));
 
 abstract class ParserException : Exception {
 public:
-	this(Parser parser, Token[] tokens, size_t idx, string error, string f = __FILE__, size_t l = __LINE__, bool endtoken = false) {
+	this(Parser parser, string file, Token[] tokens, size_t idx, string error, string f = __FILE__, size_t l = __LINE__,
+			bool endtoken = false) {
 		super("", f, l);
 
 		string linePointer = "";
@@ -74,8 +76,8 @@ public:
 				linePointer ~= "^";
 		}
 
-		msg = format("\n%s\nStarting at line %d:%d, ending at %d:%d.\nToken: %s\n%s", error, startPos[0], startPos[1],
-				startPos[0] + token.Length, startPos[1], token, linePointer);
+		msg = format("\n%s: %s\nStarting at line %d:%d, ending at %d:%d.\nToken: %s\n%s", relativePath(file), error,
+				startPos[0], startPos[1], startPos[0] + token.Length, startPos[1], token, linePointer);
 	}
 
 private:
@@ -84,15 +86,15 @@ private:
 
 class UnknownStatementException : ParserException {
 public:
-	this(Parser parser, Token[] tokens, size_t idx, string f = __FILE__, size_t l = __LINE__) {
-		super(parser, tokens, idx - 1, "Unknown statement starting with token: ", f, l);
+	this(Parser parser, string file, Token[] tokens, size_t idx, string f = __FILE__, size_t l = __LINE__) {
+		super(parser, file, tokens, idx - 1, "Unknown statement starting with token: ", f, l);
 	}
 }
 
 class ExpectedException(expected) : ParserException {
 public:
-	this(Parser parser, Token[] tokens, size_t idx, string f = __FILE__, size_t l = __LINE__) {
-		super(parser, tokens, idx, "Expected '" ~ expected.stringof ~ "' got " ~ (idx >= tokens.length ? "EOF"
+	this(Parser parser, string file, Token[] tokens, size_t idx, string f = __FILE__, size_t l = __LINE__) {
+		super(parser, file, tokens, idx, "Expected '" ~ expected.stringof ~ "' got " ~ (idx >= tokens.length ? "EOF"
 				: tokens[idx].toString), f, l, is(expected == EndToken));
 	}
 }

@@ -12,7 +12,9 @@ enum OperatorType {
 
 	AddAssign, //+=
 	Assign, //=
-	Comma //,
+	Comma, //,
+
+	Concat, //+
 }
 
 class OperatorToken : Token {

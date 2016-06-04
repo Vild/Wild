@@ -9,6 +9,7 @@ public {
 	import Wild.Frontend.Wild.Parser.Statement.ArrayStatement;
 	import Wild.Frontend.Wild.Parser.Statement.BlockStatement;
 	import Wild.Frontend.Wild.Parser.Statement.CommandStatement;
+	import Wild.Frontend.Wild.Parser.Statement.ConcatStatement;
 	import Wild.Frontend.Wild.Parser.Statement.ImportStatement;
 	import Wild.Frontend.Wild.Parser.Statement.KeywordStatement;
 	import Wild.Frontend.Wild.Parser.Statement.PropertyAddAssignStatement;

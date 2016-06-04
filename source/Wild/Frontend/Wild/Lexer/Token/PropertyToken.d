@@ -3,7 +3,7 @@ module Wild.Frontend.Wild.Lexer.Token.PropertyToken;
 import Wild.Frontend.Wild.Lexer.Token;
 
 enum PropertyType {
-Name,
+	Name,
 	ENV,
 	Output,
 	Input,

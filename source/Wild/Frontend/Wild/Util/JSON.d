@@ -4,7 +4,7 @@ import std.json;
 import Wild.Frontend.Wild.Parser.Statement;
 import Wild.Frontend.Wild.Lexer.Token;
 
-JSONValue toJson(T)(T[] arr) if (is(T : Statement) || is(T : Token) || is(T : Argument)) {
+JSONValue toJson(T)(T[] arr) if (is(T : Statement) || is(T : Token) || is(T : ConcatData)) {
 	JSONValue ret = parseJSON(`[]`);
 	foreach (obj; arr)
 		ret.array ~= obj.toJson();
@@ -22,13 +22,11 @@ JSONValue toJson(T)(T obj) if (is(T == enum)) {
 	return JSONValue(format("cast(%s)%d", T.stringof, cast(OriginalType!T)obj));
 }
 
-/*JSONValue toJson(T)(T obj) if (is(T == TypeContainer)) {
-	if (auto _ = obj.peek!TypeToken)
+JSONValue toJson(T)(T obj) if (is(T == ConcatData)) {
+	if (auto _ = obj.peek!KeywordToken)
 		return _.toJson;
-	else if (auto _ = obj.peek!SymbolToken)
-		return _.toJson;
-	else if (auto _ = obj.peek!NoData)
+	else if (auto _ = obj.peek!ValueToken)
 		return _.toJson;
 	else
 		assert(0, "You forgot to update the ast.util.json.toJson, silly!");
-}*/
+}

@@ -70,7 +70,8 @@ private:
 					if (proc.status != 0) {
 						writeln("\x1b[31;1m", proc.output, "\x1b[0m");
 						exit(0);
-					}
+					} else
+						writeln("\x1b[32;1m", proc.output, "\x1b[0m");
 
 					string extra = t.extra.replace("$in", t.input).replace("$out", t.output);
 					writefln("\t\t %s", extra);
@@ -78,7 +79,8 @@ private:
 					if (proc.status != 0) {
 						writeln("\x1b[31;1m", proc.output, "\x1b[0m");
 						exit(0);
-					}
+					} else
+						writeln("\x1b[32;1m", proc.output, "\x1b[0m");
 
 					hasBuilt[node] = true;
 					cache.Update(t.output);

@@ -21,9 +21,12 @@ public:
 
 	T Extra(T)() {
 		import std.conv;
-		static if (is(typeof(T) == string)) {
-			if (type == ValueType.String || type == ValueType.Command)
-				return lexer.Data[start .. end];
+
+		static if (is(T == string)) {
+			if (type == ValueType.String)
+				return lexer.Data[start + 1 .. end - 1];
+			else if (type == ValueType.Command)
+				return lexer.Data[start + 1 .. end];
 			else
 				assert(0, "Invalid output type!");
 		} else

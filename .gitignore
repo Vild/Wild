@@ -11,3 +11,5 @@ d-linter.ini
 input.json
 /example
 .wild-cache
+.vscode
+.gdb_history

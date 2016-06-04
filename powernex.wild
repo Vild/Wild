@@ -1,86 +1,136 @@
+@ToolFlags = "-odUtils/Object";
+@ToolCompiler = Processor {
+	|dmd @ToolFlags -of@Out @In
+};
+
 @PowerNex = Project {
 	Name = "PowerNex";
 
-	@KernelDFlags = "-m64 -fPIC -debug -c -gc -IKernel/src -defaultlib= -debuglib= -version=bare_metal -debug=allocations";
+	@KernelDFlags = "-m64 -fPIC -debug -c -gc -IKernel/Source -defaultlib= -debuglib= -version=bare_metal -debug=allocations";
 	@KernelAFlags = "--64";
-	@KernelLFlags = "-z max-page-size=0x1000 -T Kernel/src/Kernel.ld";
+	@KernelLFlags = "-z max-page-size=0x1000 -T Kernel/Source/Kernel.ld";
 
 	@ISOFlags = "-d /usr/lib/grub/i386-pc";
-	@ToolFlags = "-odUtils/Object";
 	ENV["PATH"] += "cc/bin";
 
 	@KernelDCompiler = Processor {
-		|dmd @KernelDFlags @Flags -of@Out @In
+		|powernex-dmd @KernelDFlags -of@Out @In
 	};
 	@KernelACompiler = Processor {
-		|x86_64-powernex-as @KernelDFlags @Flags -o @Out @In
+		|x86_64-powernex-as @KernelDFlags -o @Out @In
 	};
 	@KernelLinker = Processor {
-		|x86_64-powernex-ld @KernelLFlags @Flags -o @Out @In
-	};
-	@ISO = Processor {
-		|grub-mkrescue @ISOFlags @Flags -o @Out @In
-	};
-	@ToolCompiler = Processor {
-		|dmd @ToolFlags @Flags -of@Out @In
+		|x86_64-powernex-ld @KernelLFlags -o @Out @In
 	};
 	@GenSymbols = Processor {
-		|Utils/GenerateSymbols @Flags @In @Out
-	};
-	@MakeInitrd = Processor {
-		|Utils/MakeInitrd @Flags @In @Out
+		Input = [@GenerateSymbols];
+		|Utils/GenerateSymbols @In @Out
 	};
 
-	/*@GenerateSymbols = */ Target {
+	@GenerateSymbols = Target {
 		Output = "Utils/GenerateSymbols";
 		Input = "Utils/GenerateSymbols.d";
-		@GenSymbols([@DFLAGS], In, Out);
+		@GenSymbols(In, Out);
 	};
-	/*@MakeInitrd = */ Target {
-		Output = "Utils/MakeInitrd";
-		Input = "Utils/MakeInitrd.d";
-		@MakeInitrd([], In, Out);
-	};
-	/*@CompileInfo = */ Target {
-		Output = "Utils/MakeInitrd";
-		Input = null;
-		Behavior = Always;
-		@MakeInitrd([], In, Out);
-	};
+
 	/*@KernelDObjects = */ Target {
-		Output = "Kernel/Object/*-D.o";
+		Output = "Kernel/Object/AllDCode.o";
 		Input = "Kernel/Source/*.d";
-		@KernelDCompiler([], In, Out);
+		@KernelDCompiler(In, Out);
 	};
 	/*@KernelAObjects = */ Target {
 		Output = "Kernel/Object/*-A.o";
 		Input = "Kernel/Source/*.S";
-		@KernelACompiler([], In, Out);
+		@KernelACompiler(In, Out);
 	};
-	/*@Kernel = */ Target {
+	@Kernel = Target {
 		Output = "Disk/boot/PowerNex.krl";
 		Input = "Kernel/Object/*.o";
-		@KernelLinker([], In, Out);
+		@KernelLinker(In, Out);
 	};
-	/*@KernelMap = */ Target {
+	@KernelMap = Target {
 		Output = "Disk/boot/PowerNex.map";
 		Input = "Disk/boot/PowerNex.krl";
-		@GenerateSymbols([], In, Out);
-	};
-	/*@KernelInitrd = */ Target {
-		Output = "Disk/boot/PowerNex.dsk";
-		Input = "Initrd";
-		@MakeInitrd([], In, Out);
-	};
-	@KernelISO = Target {
-		Output = "PowerNex.iso";
-		Input = "Disk";
-		@ISO([], In, Out);
+		@GenerateSymbols(In, Out);
 	};
 
-	Output = [@KernelISO];
+	Output = [@Kernel, @KernelMap];
 };
 
-Build += @PowerNex;
-
 Import "Userspace.wild";
+
+@Font = Project {
+	Name = "The font for the TTY";
+
+	@Copy = Processor {
+		|cp -f @In @Out
+	};
+
+	@GZipDecompress = Processor {
+		|gzip -d -f @In
+	};
+
+	@Font = Target {
+		Output = "/usr/share/kbd/consolefonts/lat9w-16.psfu.gz";
+		Input = "Initrd/Data/Font/TTYFont.psf";
+
+		@tmp = Out + ".gz";
+		@Copy(In, @tmp);
+		@GZipDecompress(@tmp, Out);
+	};
+
+	Output = [@Font];
+};
+
+@Initrd = Project {
+	Name = "Initrd Creation";
+
+	@GenerateDSKImage = Processor {
+		|Utils/MakeInitrd @In @Out
+	};
+
+	@MakeInitrd = Target {
+		Output = "Utils/MakeInitrd";
+		Input = "Utils/MakeInitrd.d";
+		@MakeInitrd(In, Out);
+	};
+
+	@Disk = Target {
+		Output = "Disk/boot/PowerNex.dsk";
+		Input = "Initrd";
+		//ExternalInput = [@Font, @DShell, @Init];
+		@GenerateDSKImage(In, Out);
+	};
+
+	Output = [@Disk];
+};
+
+@HDD = Project {
+	Name = "HDD Creation";
+
+	@GenerateDSKImage = Processor {
+		|//mkfs ...
+	};
+
+	@ISO = Processor {
+		|grub-mkrescue @ISOFlags -o @Out @In
+	};
+
+	@Disk = Target {
+		Output = "HDD.dsk";
+		Input = "Disk";
+		//ExternalInput = [@PowerNex, @Initrd];
+		@GenerateDSKImage(In, Out);
+	};
+
+	@ISO = Target {
+		Output = "PowerNex.iso";
+		Input = "Disk";
+		//ExternalInput = [@PowerNex, @Initrd];
+		@KernelISO(In, Out);
+	};
+
+	Output = [@Disk]; // Default Output
+};
+
+Build += @HDD.ISO;

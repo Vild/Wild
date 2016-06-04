@@ -3,23 +3,48 @@ module Wild.Frontend.Wild.WildFrontend;
 import Wild.Frontend.Frontend;
 import Wild.Frontend.Wild.Lexer.Lexer;
 import Wild.Frontend.Wild.Parser.Parser;
+import std.path;
 
 class WildFrontend : Frontend {
 public:
 	this(string file) {
-		import std.file : readText;
+		super();
+		lexAndParse(absolutePath(file));
+	}
+
+	~this() {
+		foreach (p; parsers)
+			p.destroy;
+		foreach (l; lexers)
+			l.destroy;
+	}
+
+private:
+	Lexer[string] lexers;
+	Parser[string] parsers;
+	void lexAndParse(string file) {
 		import std.stdio;
 		import std.string;
+		import std.file : readText;
 
-		super();
+		if (file in lexers)
+			return;
+
+		writeln("[LEXER] Reading: ", file);
 		string text = readText(file);
-		if (text[0 .. 2] == "#!")
-			text = text[text.indexOf('\n') .. $];
-		Lexer lexer = new Lexer(text);
-		scope (exit)
-			lexer.destroy;
+		if (text.length > 2 && text[0 .. 2] == "#!") {
+			ptrdiff_t off = text.indexOf('\n');
+			if (off >= 0)
+				text = text[off .. $];
+			else
+				text = "";
+		}
 
-		File flex = File(file[0 .. $] ~ ".lex.json", "w");
+		writeln("[LEXER] Lexing: ", file);
+		Lexer lexer = new Lexer(file, text);
+		lexers[file] = lexer;
+
+		File flex = File(file ~ ".lex.json", "w");
 		scope (exit)
 			flex.close();
 		flex.writeln("[");
@@ -27,16 +52,23 @@ public:
 			flex.write((idx ? ",\n" : "") ~ token.toString);
 		flex.writeln("\n]");
 
-		Parser parser = new Parser(lexer);
+		writeln("[PARSER] Parsing: ", file);
+		Parser parser = new Parser(file, lexer);
+		parsers[file] = parser;
 
-		File fpar = File(file[0 .. $] ~ ".par.json", "w");
+		File fpar = File(file ~ ".par.json", "w");
 		scope (exit)
 			fpar.close();
 		fpar.writeln("[");
-		foreach (idx, token; parser.Root.List)
-			fpar.writeln((idx ? ",\n" : "") ~ token.toString);
+		foreach (idx, stmt; parser.Root.List)
+			fpar.writeln((idx ? ",\n" : "") ~ stmt.toString);
 		fpar.writeln("\n]");
+
+		import Wild.Frontend.Wild.Parser.Statement.ImportStatement;
+
+		foreach (stmt; parser.Root.List)
+			if (auto importStmt = cast(ImportStatement)stmt)
+				lexAndParse(buildNormalizedPath(dirName(file), importStmt.Value.Extra!string));
 	}
 
-private:
 }

@@ -7,7 +7,8 @@ import std.array;
 
 class Lexer {
 public:
-	this(string data) {
+	this(string file, string data) {
+		this.file = file;
 		this.data = data.replace("\t", " "); //TODO: Fix this silly hack for GetDataPos
 		process();
 	}
@@ -63,7 +64,31 @@ public:
 		return 0;
 	}
 
+	string[] Imports() {
+		string[] imports;
+		for (size_t i = 0; i < tokens.length - 2 /* Needs KeywordToken(KeywordType.Import) ValueToken(ValueType.String) EndToken */ ;
+				i++) {
+			auto kw = cast(KeywordToken)tokens[i];
+			if (!kw || !kw.isType(KeywordType.Import))
+				continue;
+			i++;
+
+			auto val = cast(ValueToken)tokens[i];
+			if (!val || !val.isType(ValueType.String))
+				continue;
+			i++;
+
+			auto end = cast(EndToken)tokens[i];
+			if (!end)
+				continue;
+
+			imports ~= val.Extra!string;
+		}
+		return imports;
+	}
+
 private:
+	string file;
 	string data;
 	Token[] tokens;
 
@@ -99,7 +124,7 @@ private:
 		} else if (addType()) {
 		} else if (addSymbol()) {
 		} else
-			throw new InvalidTokenException(this, current);
+			throw new InvalidTokenException(this, file, current);
 	}
 
 	bool add(alias re, T, args...)(args arg) {
@@ -163,9 +188,12 @@ private:
 		} else if (add!(`\)`, OperatorToken)(OperatorType.BracketClose)) {
 		} else if (add!(`\[`, OperatorToken)(OperatorType.SquareBracketOpen)) {
 		} else if (add!(`\]`, OperatorToken)(OperatorType.SquareBracketClose)) {
+
 		} else if (add!(`\+=`, OperatorToken)(OperatorType.AddAssign)) {
 		} else if (add!(`=`, OperatorToken)(OperatorType.Assign)) {
 		} else if (add!(`,`, OperatorToken)(OperatorType.Comma)) {
+
+		} else if (add!(`\+`, OperatorToken)(OperatorType.Concat)) {
 		} else
 			return false;
 		return true;
@@ -230,16 +258,7 @@ private:
 	}
 
 	bool addSymbol() {
-		//dfmt off
-		enum blocks =
-			`\p{L}`// ~
-			//`\p{M}` ~
-			//`\p{S}` ~
-			//`\p{N}` ~
-			//`\p{P}`
-		;
-		//dfmt on
-		auto result = matchFirst(data[current .. $], ctRegex!(`^@[` ~ blocks ~ `_][` ~ blocks ~ `_0123456789]*`));
+		auto result = matchFirst(data[current .. $], ctRegex!(`^@[\p{L}\p{So}_][\p{L}\p{So}_0123456789\.]*`));
 		if (result.empty)
 			return false;
 		auto t = new SymbolToken(this, current, current + result[0].length, column);
