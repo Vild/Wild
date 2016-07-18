@@ -10,6 +10,8 @@ FileNode  --> Target         //A target can generate file
 
 +/
 
+__EOF__
+
 import std.variant : Algebraic;
 import relationlist;
 import Wild.Frontend.Frontend;

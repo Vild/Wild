@@ -5,20 +5,7 @@
 	"authors": [
 		"Dan Printzell"
 	],
-	"dependencies": {
-		"backtrace-d": "~>0.1.0",
-		"relationlist": "~>2.1.1"
-	},
-	"buildTypes": {
-		"debug-profile": {
-			"buildOptions": [
-				"debugMode",
-				"debugInfo",
-				"profile"
-			],
-			"dflags": [
-				"-profile=gc"
-			]
-		}
-	}
+	"dflags": [
+		"-defaultlib=libphobos2.so"
+	]
 }

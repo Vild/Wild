@@ -1,0 +1,21 @@
+#+begin_src plantuml :file structure.png
+
+class Project
+class Target
+class Processor
+
+class Variable
+class Property
+
+class Command
+
+
+
+class Statement
+
+
+#+end_src
+
+#+RESULTS:
+[[file:structure.png]]
+

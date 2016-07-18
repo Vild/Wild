@@ -3,8 +3,6 @@ import std.getopt;
 import std.typetuple;
 
 import Wild.Frontend.Frontend;
-//import Wild.Frontend.JSON.JSONFrontend;
-import Wild.Frontend.Wild.WildFrontend;
 import Wild.Parser.DependencyTree;
 import Wild.Build.BuildManager;
 import Wild.Cache.Cache;
@@ -77,15 +75,15 @@ int buildState(string[] inputs) {
 	assert(inputs.length, "You need a build file");
 	writefln("Building project...");
 	Cache cache = new Cache(".wild-cache");
-	Frontend frontend = new WildFrontend(inputs[0]); //new WildFrontend(inputs[0]);
-	DependencyTree depTree = new DependencyTree(frontend);
+	Frontend frontend = new Frontend(inputs[0]);
+	/*DependencyTree depTree = new DependencyTree(frontend);
 	BuildManager mgr = new BuildManager(depTree, cache, frontend.Build);
 	bool rebuild = cache.Changed(inputs[0]) || force;
 	mgr.Build(rebuild);
 
 	if (rebuild)
 		cache.Update(inputs[0]);
-	cache.Save();
+	cache.Save();*/
 	return 0;
 }
 
@@ -100,11 +98,11 @@ int configState(string[] inputs) {
 
 int hierarchyState(string[] inputs) {
 	assert(inputs.length, "You need a build file");
-	Frontend frontend = new WildFrontend(inputs[0]);
-	DependencyTree depTree = new DependencyTree(frontend);
+	Frontend frontend = new Frontend(inputs[0]);
+/*	DependencyTree depTree = new DependencyTree(frontend);
 	depTree.MakeDotGraph(inputs[0] ~ ".dot");
 	import std.process : spawnProcess, wait;
 
-	wait(spawnProcess(["dot", "-Tx11", inputs[0] ~ ".dot"]));
+	wait(spawnProcess(["dot", "-Tx11", inputs[0] ~ ".dot"]));*/
 	return 0;
 }

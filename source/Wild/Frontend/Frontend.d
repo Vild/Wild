@@ -1,117 +1,72 @@
 module Wild.Frontend.Frontend;
 
-abstract class Frontend {
+import Wild.Frontend.Lexer.Lexer;
+import Wild.Frontend.Parser.Parser;
+import std.path;
+
+class Frontend {
 public:
-	this() {
+	this(string file) {
+		lexAndParse(absolutePath(file));
 	}
 
-	string ResolveString(string str) {
-		import std.stdio : write, writeln;
+	~this() {
+		foreach (p; parsers)
+			p.destroy;
+		foreach (l; lexers)
+			l.destroy;
+	}
 
-		string finalStr;
-		import std.string : indexOf;
+private:
+	Lexer[string] lexers;
+	Parser[string] parsers;
+	void lexAndParse(string file) {
+		import std.stdio;
+		import std.string;
+		import std.file : readText;
 
-		size_t pos = str.indexOf("${");
-		size_t end = str.indexOf('}');
-		while (pos != -1) {
-			size_t start = pos + 2;
-			string name = str[start .. end];
+		if (file in lexers)
+			return;
 
-			finalStr ~= str[0 .. pos];
-			if (auto var = name in variables)
-				finalStr ~= ResolveString(var.value);
-			else {
-				writeln(name, " could not be found!");
-				assert(0);
-			}
-
-			str = str[end + 1 .. $];
-			pos = str.indexOf("${");
-			end = str.indexOf('}');
+		writeln("[LEXER] Reading: ", file);
+		string text = readText(file);
+		if (text.length > 2 && text[0 .. 2] == "#!") {
+			ptrdiff_t off = text.indexOf('\n');
+			if (off >= 0)
+				text = text[off .. $];
+			else
+				text = "";
 		}
 
-		finalStr ~= str;
-		return finalStr;
+		writeln("[LEXER] Lexing: ", file);
+		Lexer lexer = new Lexer(file, text);
+		lexers[file] = lexer;
+
+		/*File flex = File(file ~ ".lex.json", "w");
+		scope (exit)
+			flex.close();
+		flex.writeln("[");
+		foreach (idx, token; lexer.Tokens)
+			flex.write((idx ? ",\n" : "") ~ token.toString);
+		flex.writeln("\n]");*/
+
+		writeln("[PARSER] Parsing: ", file);
+		Parser parser = new Parser(file, lexer);
+		parsers[file] = parser;
+
+		/*File fpar = File(file ~ ".par.json", "w");
+		scope (exit)
+			fpar.close();
+		fpar.writeln("[");
+		foreach (idx, stmt; parser.Root.List)
+			fpar.writeln((idx ? ",\n" : "") ~ stmt.toString);
+		fpar.writeln("\n]");*/
+
+		import Wild.Frontend.Parser.Statement.ImportStatement;
+
+		foreach (stmt; parser.Root.List)
+			if (auto importStmt = cast(ImportStatement)stmt)
+				lexAndParse(buildNormalizedPath(dirName(file), importStmt.Value.Extra!string));
 	}
 
-	ref T Resolve(T)(return ref T type) if (is(T == Variable) || is(T == Processor) || is(T == Target)) {
-		string add(T)() {
-			string ret = "";
-			foreach (name; __traits(derivedMembers, T))
-				ret ~= "type." ~ name ~ " = ResolveString(type." ~ name ~ ");\n";
-			return ret;
-		}
-
-		mixin(add!T);
-		return type;
-	}
-
-	@property Variable[string] Variables() {
-		return variables;
-	}
-
-	@property Processor[string] Processors() {
-		return processors;
-	}
-
-	@property Target[string] Targets() {
-		return targets;
-	}
-
-	@property string[] Build() {
-		return build;
-	}
-
-protected:
-	Variable[string] variables;
-	Processor[string] processors;
-	Target[string] targets;
-	string[] build;
-
-	void AddVariable(string name, string value) {
-		variables[name] = Variable(name, value);
-	}
-
-	void AddProcessor(string name, string command, string arguments) {
-		name = ResolveString(name);
-		command = ResolveString(command);
-		arguments = ResolveString(arguments);
-		processors[name] = Processor(name, command, arguments);
-	}
-
-	void AddTarget(string processor, string output, string input, bool always, string extra) {
-		processor = ResolveString(processor);
-		output = ResolveString(output);
-		input = ResolveString(input);
-		extra = ResolveString(extra);
-		targets[output] = Target(processor, output, input, always, extra);
-	}
-
-	void ToBuild(string target) {
-		build ~= ResolveString(target);
-	}
-
-	void ResolveVariables() {
-		foreach (string name, Variable v; variables)
-			v.value = ResolveString(v.value);
-	}
-}
-
-struct Variable {
-	string name;
-	string value;
-}
-
-struct Processor {
-	string name;
-	string command;
-	string arguments;
-}
-
-struct Target {
-	string processor;
-	string output;
-	string input;
-	bool always;
-	string extra;
 }

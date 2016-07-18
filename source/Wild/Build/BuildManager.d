@@ -1,5 +1,5 @@
 module Wild.Build.BuildManager;
-
+__EOF__
 import std.parallelism;
 import Wild.Parser.DependencyTree;
 import Wild.Frontend.Frontend;

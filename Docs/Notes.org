@@ -1,0 +1,18 @@
+* Word definitions
+Input = The required content for a task, to be able do what is should.
+Output = The result of the task.
+
+** Project
+A project is a collection of source file, targets and processes
+- Output :: The standard output from a Project
+
+** Processor
+A processor transforms a input file to a output file.
+- Input :: The required tools / files to be able to process the file
+
+** Target
+A target is a instruction list on how to convert a file to a output.
+
+- Input :: The file(s) to be converted
+- Output :: The output name(s) for those files.
+

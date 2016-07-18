@@ -1,25 +1,30 @@
 @DFlags = "-m64 -fPIC -debug -c -gc -IKernel/src -defaultlib= -debuglib= -version=bare_metal -debug=allocations";
 @LFlags = "";
 @DCompiler = Processor {
-	|dmd @DFlags -of@Out @In
+	|dmd ${@DFlags} -of${Out} ${In}
 };
 @Linker = Processor {
-	|x86_64-powernex-ld @LFlags -o @Out @In
+	|x86_64-powernex-ld ${@LFlags} -o ${Out} ${In}
 };
 
 @DShell = Project {
 	Name = "The Shell";
-	Target {
-		Output = "DShell/Object/*.o";
-		Input = "DShell/Source/*.d";
+	@Source = Target {
+		Output = [!"DShell/Object/*.o"];
+		Input = [!"DShell/Source/*.d"];
 
-		@DCompiler(In, Out);
+		Each {
+			@DCompiler(In, Out);
+		};
 	};
 
 	@Binary = Target {
-		Output = "Initrd/Binary/DShell!";
-		Input = "DShell/Object/*.o";
-		@Linker(In, Out);
+		Output = ["Initrd/Binary/DShell!"];
+		Input = [@Source];
+
+		Each {
+			@Linker(In, Out);
+		};
 	};
 
 	Output = [@Binary];
@@ -27,16 +32,22 @@
 
 @Init = Project {
 	Name = "The Init System";
-	Target {
-		Output = "Init/Object/*.o";
-		Input = "Init/Source/*.d";
-		@DCompiler(In, Out);
+	@Source = Target {
+		Output = [!"Init/Object/*.o"];
+		Input = [!"Init/Source/*.d"];
+
+		Each {
+			@DCompiler(In, Out);
+		};
 	};
 
 	@Binary = Target {
-		Output = "Initrd/Binary/Init!";
-		Input = "Init/Object/*.o";
-		@Linker(In, Out);
+		Output = ["Initrd/Binary/Init!"];
+		Input = [@Source];
+
+		Each {
+			@Linker(In, Out);
+		};
 	};
 
 	Output = [@Binary];
