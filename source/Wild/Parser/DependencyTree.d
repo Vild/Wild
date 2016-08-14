@@ -124,7 +124,7 @@ private:
 	Frontend frontend;
 
 	RelationList!Node nodes;
-	ulong[string] lookup;
+	size_t[string] lookup;
 
 	RelationEntry!Node AddFile(FileNode f) {
 		if (auto id = "f_" ~ f.filename in lookup)
