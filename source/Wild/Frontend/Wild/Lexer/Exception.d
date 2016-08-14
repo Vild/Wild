@@ -9,21 +9,21 @@ public:
 		super("");
 		import std.string;
 
-		long start = problem;
+		size_t start = problem;
 		if (start > 0 && lexer.Data[start] != '\n') {
 			while (start > 0 && lexer.Data[start] != '\n')
 				start--;
 			start++;
 		}
 
-		long end = lexer.Data.indexOf('\n', problem);
+		size_t end = lexer.Data.indexOf('\n', problem);
 		if (end == -1)
 			end = lexer.Data.length - 1;
 
 		size_t[2] problemLine = lexer.GetLinePos(problem);
-		string problemLocation = "";
-		for (long i = 0; i < cast(long)problemLine[1] - 1; i++)
-			problemLocation ~= "-";
+		char[] problemLocation = new char[problemLine[1]-1];
+		for (size_t i = 0; i < problemLine[1] - 1; i++)
+			problemLocation[i] = '-';
 
 		while (problem < lexer.Data.length && lexer.Data[problem] != '\n' && lexer.Data[problem] != ' ') {
 			problem++;

@@ -60,7 +60,7 @@ public:
 			lineEnd = lexer.Data.length - 1;
 
 		{
-			ulong dif = token.Length - 1;
+			size_t dif = token.Length - 1;
 			string line = format("Line %d: ", startPos[0]);
 			linePointer ~= line;
 			linePointer ~= lexer.Data[lineStart .. lineEnd];

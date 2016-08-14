@@ -3,6 +3,7 @@ module Wild.Cache.Cache;
 import std.file;
 import std.json;
 import std.datetime : SysTime;
+import std.string : format;
 import core.stdc.time : time_t;
 
 class Cache {
@@ -69,8 +70,13 @@ private:
 		try {
 			JSONValue root = parseJSON(readText(dbFile));
 
-			foreach (string file, JSONValue value; root.object)
-				files[file] = value.integer;
+			foreach (string file, JSONValue value; root.object) {
+				auto valueInteger = value.integer;
+				if(valueInteger > time_t.max) {
+					throw new Exception(format("JSON time_t value is too large: %s (max is %s)", valueInteger, time_t.max));
+				}
+				files[file] = cast(time_t)valueInteger;
+			}
 		}
 		catch (FileException e) {
 		}
